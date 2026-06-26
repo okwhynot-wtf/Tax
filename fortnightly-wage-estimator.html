@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fortnightly Wage Estimator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF2F3;
+    --card:#FFFFFF;
+    --ink:#13283B;
+    --muted:#5E7081;
+    --line:#E1E7EA;
+    --line-strong:#CBD5DA;
+    --take:#1F8A70;       /* take-home  */
+    --take-soft:#E4F2EE;
+    --tax:#D08A5B;        /* withheld   */
+    --accent:#13283B;
+    --focus:#1F8A70;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Inter",system-ui,-apple-system,sans-serif;
+    line-height:1.5;
+    padding:18px 14px 60px;
+    font-variant-numeric:tabular-nums;
+  }
+  .wrap{max-width:540px;margin:0 auto}
+
+  header{margin:6px 2px 18px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;line-height:1.1;margin-top:6px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;margin-top:8px;max-width:44ch}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+  .card h2{font-size:13px;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px}
+
+  /* ---- hero result ---- */
+  .hero{background:var(--ink);color:#fff;border:none}
+  .hero h2{color:#9DB4C4}
+  .hero .big{font-family:"Fraunces",serif;font-weight:500;font-size:46px;line-height:1;letter-spacing:-.02em}
+  .hero .biglabel{font-size:13px;color:#9DB4C4;margin-top:6px}
+  .bar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:18px 0 10px;background:#24435c}
+  .bar .seg-take{background:var(--take)}
+  .bar .seg-tax{background:var(--tax)}
+  .legend{display:flex;gap:18px;font-size:12.5px;color:#C6D4DE;flex-wrap:wrap}
+  .legend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .sentence{font-size:14px;color:#DCE6EC;margin-top:14px;line-height:1.55}
+  .sentence b{color:#fff;font-weight:600}
+  .heromini{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .heromini .chip{background:#1c3650;border-radius:10px;padding:9px 12px;flex:1;min-width:120px}
+  .heromini .chip .k{font-size:11.5px;color:#9DB4C4;letter-spacing:.04em}
+  .heromini .chip .v{font-size:18px;font-weight:600;margin-top:2px}
+
+  /* ---- settings ---- */
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  label.flbl{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45}
+  .ratebox{display:flex;align-items:center;border:1px solid var(--line-strong);border-radius:11px;overflow:hidden;max-width:200px}
+  .ratebox .dollar{padding:0 4px 0 12px;color:var(--muted);font-weight:600}
+  .ratebox input{border:none;outline:none;font:inherit;font-weight:600;font-size:18px;padding:11px 12px 11px 2px;width:100%;background:transparent;color:var(--ink)}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:11px;overflow:hidden;background:#fff}
+  .seg button{font:inherit;font-weight:600;font-size:13.5px;padding:10px 14px;border:none;background:transparent;color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--ink);color:#fff}
+  .checkrow{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .checkrow input{width:19px;height:19px;accent-color:var(--take)}
+
+  /* ---- shift grid ---- */
+  .shift{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+  .shift:first-of-type{border-top:none}
+  .shift .meta{flex:1;min-width:0}
+  .shift .name{font-weight:600;font-size:15px}
+  .shift .mult{font-size:12px;color:var(--muted);margin-top:1px}
+  .steps{display:flex;gap:14px}
+  .stepper{text-align:center}
+  .stepper .cap{font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.03em}
+  .ctrl{display:flex;align-items:center;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
+  .ctrl button{width:30px;height:34px;border:none;background:#fff;font-size:19px;line-height:1;color:var(--ink);cursor:pointer;font-weight:500}
+  .ctrl button:active{background:var(--take-soft)}
+  .ctrl .num{width:30px;text-align:center;font-weight:600;font-size:15px}
+  .ctrl .num.zero{color:var(--line-strong)}
+
+  .totrow{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:6px;padding-top:14px}
+  .totrow .k{font-size:13px;color:var(--muted)}
+  .totrow .v{font-weight:600;font-size:15px}
+
+  .reset{margin-top:14px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;text-decoration:underline;cursor:pointer;padding:0}
+
+  /* ---- breakdown table ---- */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td{padding:9px 0;border-top:1px solid var(--line)}
+  td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+  tr:first-child td{border-top:none}
+  .tax td:last-child{color:var(--tax)}
+  .net td{border-top:2px solid var(--line-strong);font-weight:700}
+  .net td:last-child{color:var(--take);font-size:16px}
+
+  details{margin-top:2px}
+  details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--ink);padding:4px 0;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"＋ ";color:var(--take);font-weight:700}
+  details[open] summary::before{content:"－ "}
+  details .body{font-size:13.5px;color:var(--muted);line-height:1.6;padding:8px 2px 2px}
+  details .body p{margin-bottom:9px}
+  details .body b{color:var(--ink)}
+
+  .foot{font-size:11.5px;color:var(--muted);line-height:1.55;margin:16px 4px 0}
+  *:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+  @media (prefers-reduced-motion:no-preference){.bar span{transition:width .35s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">NSW nursing award · fortnightly</div>
+    <h1>What's actually landing in the account this fortnight</h1>
+    <p class="sub">Enter the shifts on the roster. You'll see the gross, what's withheld for tax, and the real take-home — plus a weekly figure to budget against.</p>
+  </header>
+
+  <!-- HERO RESULT -->
+  <div class="card hero">
+    <h2>Take-home this fortnight</h2>
+    <div class="big" id="netBig">$0</div>
+    <div class="biglabel">after tax &amp; Medicare levy</div>
+
+    <div class="bar" aria-hidden="true">
+      <span class="seg-take" id="segTake" style="width:70%"></span>
+      <span class="seg-tax" id="segTax" style="width:30%"></span>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--take)"></span>Take-home <b id="legTake">$0</b></span>
+      <span><span class="dot" style="background:var(--tax)"></span>Withheld <b id="legTax">$0</b></span>
+    </div>
+
+    <div class="sentence" id="sentence">Add some shifts below to see the estimate.</div>
+
+    <div class="heromini">
+      <div class="chip"><div class="k">Per week (budget)</div><div class="v" id="perWeek">$0</div></div>
+      <div class="chip"><div class="k">Effective tax rate</div><div class="v" id="effRate">0%</div></div>
+      <div class="chip"><div class="k">Hours</div><div class="v" id="totHours">0</div></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="card">
+    <h2>Her pay setup</h2>
+
+    <div class="field">
+      <label class="flbl" for="rate">Base hourly rate</label>
+      <div class="ratebox">
+        <span class="dollar">$</span>
+        <input id="rate" type="number" inputmode="decimal" step="0.01" min="0" value="71.00" aria-label="Base hourly rate">
+      </div>
+      <p class="hint">Use the <b>ordinary</b> hourly rate from her payslip. For reference, a top-of-scale Registered Nurse is about $52.60/hr; $71 fits a senior grade (Nurse Practitioner, CNC or Unit Manager) or a rate that already has a loading baked in.</p>
+    </div>
+
+    <div class="field">
+      <label class="flbl">Tax year</label>
+      <div class="seg" id="yearSeg" role="group" aria-label="Tax year">
+        <button data-year="2526">2025–26</button>
+        <button data-year="2627" class="on">2026–27</button>
+      </div>
+      <p class="hint">2026–27 starts 1 July 2026 — the second tax bracket drops from 16% to 15%, so take-home rises a little.</p>
+    </div>
+
+    <div class="field">
+      <label class="checkrow"><input type="checkbox" id="help"> <span><b>She has a HECS/HELP debt</b> — include estimated repayment</span></label>
+    </div>
+  </div>
+
+  <!-- SHIFTS -->
+  <div class="card">
+    <h2>Shifts in the fortnight</h2>
+    <div id="grid"></div>
+
+    <div class="totrow"><span class="k">Total hours</span><span class="v" id="gridHours">0</span></div>
+    <div class="totrow" style="border-top:none;padding-top:4px"><span class="k">Gross pay</span><span class="v" id="gridGross">$0</span></div>
+    <button class="reset" id="resetBtn">Reset to a sample fortnight</button>
+  </div>
+
+  <!-- BREAKDOWN -->
+  <div class="card">
+    <h2>Where it goes</h2>
+    <table id="breakdown">
+      <tr><td>Gross pay</td><td id="bGross">$0</td></tr>
+      <tr class="tax"><td>Income tax</td><td id="bTax">$0</td></tr>
+      <tr class="tax"><td>Medicare levy (2%)</td><td id="bMed">$0</td></tr>
+      <tr class="tax" id="bHelpRow" style="display:none"><td>HECS/HELP repayment</td><td id="bHelp">$0</td></tr>
+      <tr class="net"><td>Take-home</td><td id="bNet">$0</td></tr>
+    </table>
+    <p class="hint" style="margin-top:12px">Super (12%) is paid by her employer <b>on top</b> of this — it isn't deducted from take-home.</p>
+  </div>
+
+  <!-- EXPLAINER -->
+  <div class="card">
+    <h2>Good to know</h2>
+
+    <details open>
+      <summary>Why the tax changes every fortnight</summary>
+      <div class="body">
+        <p>Payroll works out tax as if <b>every</b> fortnight of the year looked like this one. It multiplies this fortnight's gross by 26, finds the yearly tax on that figure, then takes 1/26th of it.</p>
+        <p>So a fortnight with several weekend or night shifts looks like a high-earning year, and a bigger slice is withheld. A quiet fortnight looks like a lower-earning year, so less is withheld. Because tax brackets are stepped, the take-home doesn't move in a straight line with the hours.</p>
+        <p>It evens out at tax time — over- or under-withholding is squared up in her annual return. For budgeting, the <b>per-week</b> figure above is the safe number to plan around.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>The penalty rates used here</summary>
+      <div class="body">
+        <p><b>Saturday — 1.5×</b> (time and a half). <b>Sunday — 1.75×</b> (time and three-quarters, not double; double-time only applies as a Sunday <i>overtime</i> rate). <b>Weekday night — +20%</b> loading. <b>Public holiday — ~2.5×</b> (an approximation of the public-health "1.5 days' pay extra" entitlement; the exact value depends on roster status).</p>
+        <p>Weekend rates <b>replace</b> the night loading rather than stacking on top of it. If she's <b>casual</b>, ordinary hours carry a 25% loading and weekend maths differs — set the base rate to her casual hourly rate to get close.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>How accurate is this?</summary>
+      <div class="body">
+        <p>It's a close estimate, not a payslip. Real payroll uses the ATO's rounded withholding tables and may differ by a few dollars. It assumes she's an Australian resident claiming the tax-free threshold, and it doesn't include salary packaging, allowances, or other deductions. Treat it as a planning guide.</p>
+      </div>
+    </details>
+  </div>
+
+  <p class="foot">Estimate only — general information, not tax or financial advice. Penalty rates reflect the NSW Public Health System Nurses' &amp; Midwives' (State) Award; confirm her exact classification and conditions on her payslip or with the NSWNMA.</p>
+
+</div>
+
+<script>
+(function(){
+  const AUD = new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',minimumFractionDigits:2,maximumFractionDigits:2});
+  const AUD0 = new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0});
+
+  const CATS = [
+    {key:'weekday', name:'Weekday',        mult:1.00, desc:'ordinary rate'},
+    {key:'wknight', name:'Weekday night',  mult:1.20, desc:'+20% night loading'},
+    {key:'sat',     name:'Saturday',       mult:1.50, desc:'1.5× · time and a half'},
+    {key:'sun',     name:'Sunday',         mult:1.75, desc:'1.75× · time and three-quarters'},
+    {key:'ph',      name:'Public holiday', mult:2.50, desc:'≈2.5× · see notes'}
+  ];
+
+  const SAMPLE = {weekday:[0,4], wknight:[0,0], sat:[0,1], sun:[1,0], ph:[0,0]};
+  let state = JSON.parse(JSON.stringify(SAMPLE));   // [count8, count12]
+  let year = '2627';
+  let help = false;
+
+  // ---- tax engine ----
+  function incomeTax(inc, yr){
+    const r2 = (yr==='2627') ? 0.15 : 0.16;
+    const b = [[18200,0],[45000,r2],[135000,0.30],[190000,0.37],[Infinity,0.45]];
+    let tax=0, prev=0;
+    for(const [cap,rate] of b){
+      if(inc>cap){ tax += (cap-prev)*rate; prev=cap; }
+      else { tax += (inc-prev)*rate; break; }
+    }
+    return Math.max(0,tax);
+  }
+  function medicare(inc){
+    const lower=28011, upper=28011*1.25; // phase-in
+    if(inc<=lower) return 0;
+    if(inc<upper)  return 0.10*(inc-lower);
+    return 0.02*inc;
+  }
+  function helpRepay(inc){
+    // marginal HELP (2026-27 thresholds), capped at 10% of income
+    const t1=69528, t2=129717;
+    let r = 0.15*Math.max(0,Math.min(inc,t2)-t1) + 0.17*Math.max(0,inc-t2);
+    return Math.min(r, 0.10*inc);
+  }
+
+  // ---- build grid ----
+  const grid = document.getElementById('grid');
+  CATS.forEach(c=>{
+    const row=document.createElement('div'); row.className='shift';
+    row.innerHTML =
+      '<div class="meta"><div class="name">'+c.name+'</div><div class="mult">'+c.desc+'</div></div>'+
+      '<div class="steps">'+
+        stepHTML(c.key,0,'8 hr')+
+        stepHTML(c.key,1,'12 hr')+
+      '</div>';
+    grid.appendChild(row);
+  });
+  function stepHTML(key,idx,cap){
+    return '<div class="stepper"><div class="cap">'+cap+'</div>'+
+      '<div class="ctrl">'+
+        '<button data-k="'+key+'" data-i="'+idx+'" data-d="-1" aria-label="less">–</button>'+
+        '<span class="num" id="n-'+key+'-'+idx+'">0</span>'+
+        '<button data-k="'+key+'" data-i="'+idx+'" data-d="1" aria-label="more">+</button>'+
+      '</div></div>';
+  }
+  grid.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const k=b.dataset.k, i=+b.dataset.i, d=+b.dataset.d;
+    state[k][i]=Math.max(0,state[k][i]+d);
+    render();
+  });
+
+  // ---- controls ----
+  document.getElementById('rate').addEventListener('input',render);
+  document.getElementById('yearSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    year=b.dataset.year;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+    render();
+  });
+  document.getElementById('help').addEventListener('change',e=>{help=e.target.checked;render();});
+  document.getElementById('resetBtn').addEventListener('click',()=>{
+    state=JSON.parse(JSON.stringify(SAMPLE)); render();
+  });
+
+  // ---- render ----
+  function render(){
+    const rate=parseFloat(document.getElementById('rate').value)||0;
+    let hours=0, gross=0;
+    CATS.forEach(c=>{
+      const [c8,c12]=state[c.key];
+      document.getElementById('n-'+c.key+'-0').textContent=c8;
+      document.getElementById('n-'+c.key+'-1').textContent=c12;
+      document.getElementById('n-'+c.key+'-0').classList.toggle('zero',c8===0);
+      document.getElementById('n-'+c.key+'-1').classList.toggle('zero',c12===0);
+      const h=c8*8+c12*12;
+      hours+=h; gross+=h*rate*c.mult;
+    });
+
+    const annual=gross*26;
+    const it=incomeTax(annual,year);
+    const med=medicare(annual);
+    const hp=help?helpRepay(annual):0;
+    const fnIncomeTax=it/26, fnMed=med/26, fnHelp=hp/26;
+    const withheld=fnIncomeTax+fnMed+fnHelp;
+    const net=gross-withheld;
+    const eff=gross>0?(withheld/gross*100):0;
+
+    // hero
+    document.getElementById('netBig').textContent=AUD0.format(net);
+    document.getElementById('legTake').textContent=AUD0.format(net);
+    document.getElementById('legTax').textContent=AUD0.format(withheld);
+    document.getElementById('perWeek').textContent=AUD0.format(net/2);
+    document.getElementById('effRate').textContent=eff.toFixed(1)+'%';
+    document.getElementById('totHours').textContent=hours;
+
+    const takePct=gross>0?Math.max(0,Math.min(100,net/gross*100)):70;
+    document.getElementById('segTake').style.width=takePct+'%';
+    document.getElementById('segTax').style.width=(100-takePct)+'%';
+
+    const sent=document.getElementById('sentence');
+    if(gross>0){
+      sent.innerHTML='From <b>'+AUD.format(gross)+'</b> gross, <b>'+AUD.format(withheld)+
+        '</b> is withheld, leaving <b>'+AUD.format(net)+'</b> in the account.';
+    } else {
+      sent.textContent='Add some shifts below to see the estimate.';
+    }
+
+    // grid totals + breakdown
+    document.getElementById('gridHours').textContent=hours;
+    document.getElementById('gridGross').textContent=AUD.format(gross);
+    document.getElementById('bGross').textContent=AUD.format(gross);
+    document.getElementById('bTax').textContent='– '+AUD.format(fnIncomeTax);
+    document.getElementById('bMed').textContent='– '+AUD.format(fnMed);
+    document.getElementById('bNet').textContent=AUD.format(net);
+    const hr=document.getElementById('bHelpRow');
+    hr.style.display=help?'table-row':'none';
+    document.getElementById('bHelp').textContent='– '+AUD.format(fnHelp);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
